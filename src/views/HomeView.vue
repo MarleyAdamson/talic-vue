@@ -6,7 +6,7 @@ const title = ref<string>('Hello World!')
 
 <template>
   <main>
-    <h1>
+    <h1 class="text-3xl font-bold text-blue-600">
       {{ title }}
     </h1>
   </main>
