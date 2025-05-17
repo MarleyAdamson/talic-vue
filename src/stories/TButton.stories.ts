@@ -9,13 +9,17 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'success', 'secondary'],
+      options: ['primary', 'success', 'secondary', 'warning', 'error', 'info', 'ghost'],
       description: 'Controls the visual style of the button',
     },
-    style: {
-      control: 'radio',
-      options: ['solid', 'light'],
-      description: 'Sets the button style (solid for better contrast, light for subtle UI)',
+    outline: {
+      control: 'boolean',
+      description: 'Whether to use the outline style for the button',
+    },
+    size: {
+      control: 'select',
+      options: ['xs', 'sm', 'md', 'lg', 'xl'],
+      description: 'Controls the size of the button',
     },
     ariaLabel: {
       control: 'text',
@@ -50,6 +54,14 @@ const meta = {
       action: 'clicked',
       description: 'Event emitted when the button is clicked',
     },
+    prefix: {
+      description: 'Content to display before the main button text',
+      control: 'text',
+    },
+    suffix: {
+      description: 'Content to display after the main button text',
+      control: 'text',
+    },
   },
   args: {
     default: 'Button Text',
@@ -57,7 +69,8 @@ const meta = {
     disabled: false,
     loading: false,
     fullWidth: false,
-    style: 'solid', // Default to solid style for better a11y
+    size: 'md',
+    outline: false,
   },
   parameters: {
     // Accessibility parameters
@@ -115,20 +128,6 @@ export const Primary: Story = {
   },
 }
 
-// Light Primary variant
-export const LightPrimary: Story = {
-  args: {
-    variant: 'primary',
-    style: 'light',
-    default: 'Light Primary Button',
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const button = canvas.getByText('Light Primary Button')
-    await userEvent.click(button)
-  },
-}
-
 // Secondary variant
 export const Secondary: Story = {
   args: {
@@ -160,16 +159,47 @@ export const Success: Story = {
   },
 }
 
-// Light Success variant
-export const LightSuccess: Story = {
+// Warning variant
+export const Warning: Story = {
   args: {
-    variant: 'success',
-    style: 'light',
-    default: 'Light Success Button',
+    variant: 'warning',
+    default: 'Warning Button',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const button = canvas.getByText('Light Success Button')
+    const button = canvas.getByText('Warning Button')
+
+    // Click the button
+    await userEvent.click(button)
+  },
+}
+
+// Error variant
+export const Error: Story = {
+  args: {
+    variant: 'error',
+    default: 'Error Button',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByText('Error Button')
+
+    // Click the button
+    await userEvent.click(button)
+  },
+}
+
+// Info variant
+export const Info: Story = {
+  args: {
+    variant: 'info',
+    default: 'Info Button',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByText('Info Button')
+
+    // Click the button
     await userEvent.click(button)
   },
 }
@@ -317,4 +347,384 @@ export const KeyboardNavigation: Story = {
     // Test keyboard activation
     await userEvent.keyboard('{Enter}')
   },
+}
+
+// Button with prefix icon
+export const WithPrefixIcon: Story = {
+  args: {
+    variant: 'primary',
+    default: 'Button with Prefix',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A button with a prefix icon using the prefix slot',
+      },
+    },
+  },
+  render: (args) => ({
+    components: { TButton },
+    setup() {
+      const onClick = fn()
+      return { args, onClick }
+    },
+    template: `
+      <TButton v-bind="args" @click="onClick">
+        <template #prefix>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+          </svg>
+        </template>
+        {{ args.default }}
+      </TButton>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByText('Button with Prefix')
+
+    // Verify icon is present
+    const icon = canvasElement.querySelector('svg')
+    await expect(icon).not.toBeNull()
+
+    // Click the button
+    await userEvent.click(button)
+  },
+}
+
+// Button with suffix icon
+export const WithSuffixIcon: Story = {
+  args: {
+    variant: 'primary',
+    default: 'Button with Suffix',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A button with a suffix icon using the suffix slot',
+      },
+    },
+  },
+  render: (args) => ({
+    components: { TButton },
+    setup() {
+      const onClick = fn()
+      return { args, onClick }
+    },
+    template: `
+      <TButton v-bind="args" @click="onClick">
+        {{ args.default }}
+        <template #suffix>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </template>
+      </TButton>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByText('Button with Suffix')
+
+    // Verify icon is present
+    const icon = canvasElement.querySelector('svg')
+    await expect(icon).not.toBeNull()
+
+    // Click the button
+    await userEvent.click(button)
+  },
+}
+
+// Button with both prefix and suffix icons
+export const WithBothIcons: Story = {
+  args: {
+    variant: 'primary',
+    default: 'Button with Icons',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A button with both prefix and suffix icons using the respective slots',
+      },
+    },
+  },
+  render: (args) => ({
+    components: { TButton },
+    setup() {
+      const onClick = fn()
+      return { args, onClick }
+    },
+    template: `
+      <TButton v-bind="args" @click="onClick">
+        <template #prefix>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+          </svg>
+        </template>
+        {{ args.default }}
+        <template #suffix>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+          </svg>
+        </template>
+      </TButton>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByText('Button with Icons')
+
+    // Verify icons are present
+    const icons = canvasElement.querySelectorAll('svg')
+    await expect(icons.length).toBe(2)
+
+    // Click the button
+    await userEvent.click(button)
+  },
+}
+
+// Button Sizes
+export const ExtraSmall: Story = {
+  args: {
+    variant: 'primary',
+    size: 'xs',
+    default: 'Extra Small Button',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Extra small button size, suitable for tight spaces',
+      },
+    },
+  },
+}
+
+export const Small: Story = {
+  args: {
+    variant: 'primary',
+    size: 'sm',
+    default: 'Small Button',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Small button size, for compact interfaces',
+      },
+    },
+  },
+}
+
+export const Medium: Story = {
+  args: {
+    variant: 'primary',
+    size: 'md',
+    default: 'Medium Button',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Standard medium button size (default)',
+      },
+    },
+  },
+}
+
+export const Large: Story = {
+  args: {
+    variant: 'primary',
+    size: 'lg',
+    default: 'Large Button',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Large button size for emphasis',
+      },
+    },
+  },
+}
+
+export const ExtraLarge: Story = {
+  args: {
+    variant: 'primary',
+    size: 'xl',
+    default: 'Extra Large Button',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Extra large button size for maximum visibility',
+      },
+    },
+  },
+}
+
+// Size comparison story showing all sizes together
+export const SizeComparison: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: 'All button sizes compared side by side',
+      },
+    },
+  },
+  render: () => ({
+    components: { TButton },
+    setup() {
+      const onClick = fn()
+      return { onClick }
+    },
+    template: `
+      <div class="flex flex-col items-start space-y-4">
+        <TButton size="xs" @click="onClick">Extra Small</TButton>
+        <TButton size="sm" @click="onClick">Small</TButton>
+        <TButton size="md" @click="onClick">Medium (Default)</TButton>
+        <TButton size="lg" @click="onClick">Large</TButton>
+        <TButton size="xl" @click="onClick">Extra Large</TButton>
+      </div>
+    `,
+  }),
+}
+
+// Ghost variant
+export const Ghost: Story = {
+  args: {
+    variant: 'ghost',
+    default: 'Ghost Button',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A transparent button that shows a subtle background on hover',
+      },
+    },
+  },
+}
+
+// Outline Variants
+export const OutlinePrimary: Story = {
+  args: {
+    variant: 'primary',
+    outline: true,
+    default: 'Outline Primary',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Primary button with outline style',
+      },
+    },
+  },
+}
+
+export const OutlineSuccess: Story = {
+  args: {
+    variant: 'success',
+    outline: true,
+    default: 'Outline Success',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Success button with outline style',
+      },
+    },
+  },
+}
+
+export const OutlineWarning: Story = {
+  args: {
+    variant: 'warning',
+    outline: true,
+    default: 'Outline Warning',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Warning button with outline style',
+      },
+    },
+  },
+}
+
+export const OutlineError: Story = {
+  args: {
+    variant: 'error',
+    outline: true,
+    default: 'Outline Error',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Error button with outline style',
+      },
+    },
+  },
+}
+
+export const OutlineInfo: Story = {
+  args: {
+    variant: 'info',
+    outline: true,
+    default: 'Outline Info',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Info button with outline style',
+      },
+    },
+  },
+}
+
+// Variant Comparison story showing solid, outline, and ghost styles
+export const VariantComparison: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: 'A comparison of solid, outline, and ghost button styles',
+      },
+    },
+  },
+  render: () => ({
+    components: { TButton },
+    setup() {
+      const onClick = fn()
+      return { onClick }
+    },
+    template: `
+      <div class="space-y-8">
+        <div class="space-y-2">
+          <h3 class="text-lg font-medium">Solid Variants (Default)</h3>
+          <div class="flex flex-wrap gap-2">
+            <TButton variant="primary" @click="onClick">Primary</TButton>
+            <TButton variant="secondary" @click="onClick">Secondary</TButton>
+            <TButton variant="success" @click="onClick">Success</TButton>
+            <TButton variant="warning" @click="onClick">Warning</TButton>
+            <TButton variant="error" @click="onClick">Error</TButton>
+            <TButton variant="info" @click="onClick">Info</TButton>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <h3 class="text-lg font-medium">Outline Variants</h3>
+          <div class="flex flex-wrap gap-2">
+            <TButton variant="primary" outline @click="onClick">Primary</TButton>
+            <TButton variant="secondary" outline @click="onClick">Secondary</TButton>
+            <TButton variant="success" outline @click="onClick">Success</TButton>
+            <TButton variant="warning" outline @click="onClick">Warning</TButton>
+            <TButton variant="error" outline @click="onClick">Error</TButton>
+            <TButton variant="info" outline @click="onClick">Info</TButton>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <h3 class="text-lg font-medium">Ghost Variant</h3>
+          <div class="flex flex-wrap gap-2">
+            <TButton variant="ghost" @click="onClick">Ghost</TButton>
+          </div>
+        </div>
+      </div>
+    `,
+  }),
 }
