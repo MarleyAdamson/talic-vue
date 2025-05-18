@@ -1,17 +1,32 @@
 <script lang="ts" setup>
 import type { PropType, Slots, ComputedRef } from 'vue'
-import { computed, useSlots } from 'vue'
+import { computed, useSlots, inject, ref, onMounted } from 'vue'
 
 // Badge variant types - same as TButton
 type BadgeVariant = 'primary' | 'success' | 'secondary' | 'warning' | 'error' | 'info' | 'ghost'
 type BadgeSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 type BadgeRounding = 'full' | 'md' | 'lg' | 'sm' | 'none' | 'default'
+type Orientation = 'horizontal' | 'vertical'
 
 // Size classes interface
 interface SizeConfig {
   badge: string[]
   icon: string
   closeIcon: string
+}
+
+// Badge group context interface
+interface BadgeGroupContext {
+  isBadgeGroup: { value: boolean }
+  isFirstBadge: { value: (el: Element) => boolean }
+  isLastBadge: { value: (el: Element) => boolean }
+  rounded: { value: boolean }
+  orientation: { value: Orientation }
+  hasGap: { value: boolean }
+  registerBadge: () => string
+  handleBadgeDismiss: (id: string) => void
+  visibleBadges: { [key: string]: boolean }
+  showBadge: (id: string) => void
 }
 
 const props = defineProps({
@@ -90,6 +105,54 @@ const emit = defineEmits<{
 // Get slots to check if prefix/suffix are provided
 const slots: Slots = useSlots()
 
+// Badge element reference
+const badgeElement = ref<HTMLElement | null>(null)
+
+// Inject badge group context if available
+const badgeGroup = inject<BadgeGroupContext>('badgeGroup', {
+  isBadgeGroup: { value: false },
+  isFirstBadge: { value: () => false },
+  isLastBadge: { value: () => false },
+  rounded: { value: true },
+  orientation: { value: 'horizontal' },
+  hasGap: { value: false },
+  registerBadge: () => '',
+  handleBadgeDismiss: () => {},
+  visibleBadges: {},
+  showBadge: () => {},
+})
+
+// Badge ID for tracking in the group
+const badgeId = ref('')
+
+// Reactive flags to track badge position
+const isFirst = ref(false)
+const isLast = ref(false)
+const isGrouped = computed(() => badgeGroup.isBadgeGroup.value)
+const isRounded = computed(() => badgeGroup.rounded.value)
+const orientation = computed(() => badgeGroup.orientation.value)
+
+// Check if badge should be visible (when in a group)
+const isVisible = computed(() => {
+  if (!isGrouped.value || !badgeId.value) {
+    return true
+  }
+  return badgeGroup.visibleBadges[badgeId.value] !== false
+})
+
+// Register with badge group on mount
+onMounted(() => {
+  if (isGrouped.value) {
+    badgeId.value = badgeGroup.registerBadge()
+
+    // Update badge position flags
+    if (badgeElement.value) {
+      isFirst.value = badgeGroup.isFirstBadge.value(badgeElement.value)
+      isLast.value = badgeGroup.isLastBadge.value(badgeElement.value)
+    }
+  }
+})
+
 // Get the rounding class based on the rounding prop and size
 const getRoundingClass = computed((): string => {
   if (props.rounding === 'full') {
@@ -157,6 +220,39 @@ const sizeClasses: ComputedRef<SizeConfig> = computed((): SizeConfig => {
 
 // Common base classes for all badges
 const baseClasses: string[] = ['inline-flex', 'items-center', 'font-medium', 'transition-all']
+
+// Badge group-specific classes
+const badgeGroupClasses = computed(() => {
+  if (!isGrouped.value) {
+    return []
+  }
+
+  // Default to maintaining individual badge rounding
+  const classes: string[] = []
+
+  // If we're in a badge group with rounded enabled, adjust corners
+  if (isRounded.value) {
+    if (orientation.value === 'vertical') {
+      // For vertical orientation
+      if (isFirst.value) {
+        classes.push('rounded-t')
+      }
+      if (isLast.value) {
+        classes.push('rounded-b')
+      }
+    } else {
+      // For horizontal orientation (default)
+      if (isFirst.value) {
+        classes.push('rounded-l')
+      }
+      if (isLast.value) {
+        classes.push('rounded-r')
+      }
+    }
+  }
+
+  return classes
+})
 
 // Badge variant classes
 const badgeClasses: ComputedRef<string[]> = computed<string[]>((): string[] => {
@@ -247,20 +343,26 @@ const badgeClasses: ComputedRef<string[]> = computed<string[]>((): string[] => {
   }
 
   if (props.class) {
-    return [...base, ...variants, props.class]
+    return [...base, ...variants, ...badgeGroupClasses.value, props.class]
   }
 
-  return [...base, ...variants]
+  return [...base, ...variants, ...badgeGroupClasses.value]
 })
 
 // Handle dismiss event
 const handleDismiss = (): void => {
+  // Notify parent components
   emit('dismiss')
+
+  // If in a badge group, also notify the group
+  if (isGrouped.value && badgeId.value) {
+    badgeGroup.handleBadgeDismiss(badgeId.value)
+  }
 }
 </script>
 
 <template>
-  <span :class="badgeClasses" :aria-label="ariaLabel">
+  <span v-if="isVisible" ref="badgeElement" :class="badgeClasses" :aria-label="ariaLabel">
     <span class="flex items-center gap-1.5">
       <!-- Prefix slot (only shown when used) -->
       <slot v-if="!!slots.prefix" name="prefix" />
