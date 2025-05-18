@@ -15,17 +15,18 @@ A modern, accessible Vue 3 component library with Tailwind CSS styling - all bui
 
 The library includes the following components:
 
-| Component    | Description                                                       |
-| ------------ | ----------------------------------------------------------------- |
-| TButton      | A customizable button with variants, sizes, and states            |
-| TButtonGroup | Groups related buttons with proper styling and spacing            |
-| TBadge       | Displays status indicators, counts, or labels                     |
-| TBadgeGroup  | Manages collections of badges with visibility tracking            |
-| TAlert       | Shows contextual feedback messages with different severity levels |
-| TCard        | Container component for organizing related content                |
-| TModal       | Dialog component for focused user interactions                    |
-| TInput       | Form input component with validation states and styling           |
-| TPopover     | Accessible popover for displaying contextual content              |
+| Component      | Description                                                       |
+| -------------- | ----------------------------------------------------------------- |
+| TButton        | A customizable button with variants, sizes, and states            |
+| TButtonGroup   | Groups related buttons with proper styling and spacing            |
+| TBadge         | Displays status indicators, counts, or labels                     |
+| TBadgeGroup    | Manages collections of badges with visibility tracking            |
+| TAlert         | Shows contextual feedback messages with different severity levels |
+| TCard          | Container component for organizing related content                |
+| TModal         | Dialog component for focused user interactions                    |
+| TInput         | Form input component with validation states and styling           |
+| TPopover       | Accessible popover for displaying contextual content              |
+| TInputCalendar | Date picker component with calendar selection and formatting      |
 
 ## Type Support for `.vue` Imports in TS
 
@@ -88,6 +89,9 @@ import {
   TInput,
   InputType,
   InputVariant,
+  TInputCalendar,
+  WeekdayStart,
+  DateDisplayFormat,
   // etc.
 } from '@talic-vue/components'
 
@@ -95,4 +99,6 @@ import {
 const variant: ButtonVariant = 'primary'
 const placement: PopoverPlacement = 'bottom'
 const inputType: InputType = 'email'
+const weekStart: WeekdayStart = 'monday'
+const dateFormat: DateDisplayFormat = 'yyyy-MM-dd'
 ```

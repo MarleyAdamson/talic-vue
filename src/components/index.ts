@@ -8,6 +8,7 @@ export { default as TBadge } from './TBadge.vue'
 export { default as TBadgeGroup } from './TBadgeGroup.vue'
 export { default as TInput } from './TInput.vue'
 export { default as TPopover } from './TPopover.vue'
+export { default as TInputCalendar } from './TInputCalendar.vue'
 
 // Export types
 export * from './types'

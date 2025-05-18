@@ -94,3 +94,14 @@ export interface PopoverProps {
   ariaDescribedby: string
   autoFocus: boolean
 }
+
+// TInputCalendar types
+export type WeekdayStart = 'monday' | 'sunday' | 'saturday'
+export type DateDisplayFormat = 'yyyy-MM-dd' | 'MM/dd/yyyy' | 'dd/MM/yyyy' | 'MMM dd, yyyy'
+export interface CalendarDay {
+  date: Date
+  isCurrentMonth: boolean
+  isToday: boolean
+  isSelected: boolean
+  isDisabled: boolean
+}

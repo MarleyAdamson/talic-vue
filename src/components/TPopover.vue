@@ -109,21 +109,18 @@ const emit = defineEmits<{
 }>()
 
 // References to DOM elements
+const containerRef = ref<HTMLElement | null>(null)
 const triggerRef = ref<HTMLElement | null>(null)
 const popoverRef = ref<HTMLElement | null>(null)
-const containerRef = ref<HTMLElement | null>(null)
 
 // Popover state
 const isVisible = ref(props.modelValue)
-const isClosing = ref(false)
-const isOpening = ref(false)
-const actualPlacement = ref<PopoverPlacement>(props.placement)
-
-// Animation timing
-const ANIMATION_DURATION = 200
+const popoverStyle = ref<Record<string, string>>({})
 
 // For managing focus when popover is open
 const previousActiveElement = ref<HTMLElement | null>(null)
+// For intersection observer
+const observer = ref<IntersectionObserver | null>(null)
 
 // Compute proper aria attributes for the trigger
 const triggerAriaAttrs = computed(() => {
@@ -149,203 +146,43 @@ const popoverAriaAttrs = computed(() => {
   return attrs
 })
 
-// Computed styles for positioning
-const popoverStyles = computed(() => {
-  if (!isVisible.value) return {}
+// Position the popover is defined below
 
-  return {
-    position: 'absolute',
-    zIndex: '50',
-  }
-})
-
-// Animation classes
-const animationClasses = computed(() => {
-  if (!props.animated) return {}
-
-  const baseClasses = 'transition-all duration-200 ease-out'
-  const enterFromClasses = {
-    top: 'opacity-0 translate-y-2',
-    right: 'opacity-0 -translate-x-2',
-    bottom: 'opacity-0 -translate-y-2',
-    left: 'opacity-0 translate-x-2',
-    auto: 'opacity-0 scale-95',
-  }
-
-  return {
-    base: baseClasses,
-    show: 'opacity-100 translate-x-0 translate-y-0 scale-100',
-    hide: enterFromClasses[actualPlacement.value] || enterFromClasses.auto,
-  }
-})
-
-// Watch for model value changes
-watch(
-  () => props.modelValue,
-  (newVal) => {
-    if (newVal) {
-      showPopover()
-    } else {
-      hidePopover()
-    }
-  },
-)
-
-// Find focusable elements within a container
-const getFocusableElements = (container: HTMLElement): HTMLElement[] => {
-  const selector =
-    'a[href], button, input, textarea, select, details, [tabindex]:not([tabindex="-1"])'
-  const elements = Array.from(container.querySelectorAll(selector)) as HTMLElement[]
-  return elements.filter(
-    (el) => !el.hasAttribute('disabled') && el.getAttribute('tabindex') !== '-1',
-  )
-}
-
-// Focus the first interactive element in the popover
-const focusFirstElement = () => {
-  if (!popoverRef.value || !props.autoFocus) return
-
-  // Remember the previously focused element to restore focus later
-  previousActiveElement.value = document.activeElement as HTMLElement
-
-  // Get all focusable elements in the popover
-  const focusableElements = getFocusableElements(popoverRef.value)
-
-  if (focusableElements.length > 0) {
-    // Focus the first focusable element
-    focusableElements[0].focus()
-  } else {
-    // If no focusable elements, focus the popover itself
-    popoverRef.value.focus()
-  }
-}
-
-// Restore focus to the previously focused element when closing
-const restoreFocus = () => {
-  if (previousActiveElement.value) {
-    previousActiveElement.value.focus()
-    previousActiveElement.value = null
-  }
-}
-
-// Open popover
-const showPopover = async () => {
-  isClosing.value = false
-  isOpening.value = true
-  isVisible.value = true
-
-  // Wait for the DOM to update
-  await nextTick()
-
-  // Position the popover
-  updatePosition()
-
-  // Focus the first focusable element
-  focusFirstElement()
-
-  // Trigger animation
-  setTimeout(() => {
-    isOpening.value = false
-  }, 50)
-
-  emit('show')
-
-  // Start observing for viewport changes
-  startObserver()
-}
-
-// Close popover
-const hidePopover = () => {
-  if (!isVisible.value) return
-
-  if (props.animated) {
-    isClosing.value = true
-    setTimeout(() => {
-      isVisible.value = false
-      isClosing.value = false
-      restoreFocus()
-      emit('hide')
-    }, ANIMATION_DURATION)
-  } else {
-    isVisible.value = false
-    restoreFocus()
-    emit('hide')
-  }
-
-  // Stop observing when closed
-  stopObserver()
-}
-
-// Toggle popover
-const togglePopover = () => {
-  emit('update:modelValue', !isVisible.value)
-}
-
-// Determine best placement for the popover to stay in viewport
-const getOptimalPlacement = () => {
-  if (!triggerRef.value || !popoverRef.value) return 'bottom'
+// Position the popover
+const updatePosition = () => {
+  if (!isVisible.value || !triggerRef.value || !popoverRef.value) return
 
   const triggerRect = triggerRef.value.getBoundingClientRect()
   const popoverRect = popoverRef.value.getBoundingClientRect()
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
+  const windowWidth = window.innerWidth
+  const windowHeight = window.innerHeight
 
-  // If user specified a placement other than auto, try to use it
-  if (props.placement !== 'auto') {
-    const preferred = props.placement
-
-    // Check if the preferred placement will fit
-    const spaceAvailable = {
-      top: triggerRect.top > popoverRect.height + props.offset,
-      right: viewportWidth - triggerRect.right > popoverRect.width + props.offset,
-      bottom: viewportHeight - triggerRect.bottom > popoverRect.height + props.offset,
-      left: triggerRect.left > popoverRect.width + props.offset,
-    }
-
-    // Use preferred placement if it fits
-    if (spaceAvailable[preferred]) {
-      return preferred
-    }
-  }
+  let placement = props.placement
 
   // Auto placement logic
-  const spaceTop = triggerRect.top
-  const spaceRight = viewportWidth - triggerRect.right
-  const spaceBottom = viewportHeight - triggerRect.bottom
-  const spaceLeft = triggerRect.left
+  if (placement === 'auto') {
+    const spaceBelow = windowHeight - triggerRect.bottom
+    const spaceAbove = triggerRect.top
+    const spaceRight = windowWidth - triggerRect.right
+    const spaceLeft = triggerRect.left
 
-  // Get the direction with the most space
-  const maxSpace = Math.max(spaceTop, spaceRight, spaceBottom, spaceLeft)
+    // Find the side with most space
+    const spaces = [
+      { placement: 'bottom', space: spaceBelow },
+      { placement: 'top', space: spaceAbove },
+      { placement: 'right', space: spaceRight },
+      { placement: 'left', space: spaceLeft },
+    ]
 
-  if (maxSpace === spaceBottom && spaceBottom >= popoverRect.height + props.offset) {
-    return 'bottom'
-  } else if (maxSpace === spaceTop && spaceTop >= popoverRect.height + props.offset) {
-    return 'top'
-  } else if (maxSpace === spaceRight && spaceRight >= popoverRect.width + props.offset) {
-    return 'right'
-  } else if (maxSpace === spaceLeft && spaceLeft >= popoverRect.width + props.offset) {
-    return 'left'
+    const bestPlacement = spaces.sort((a, b) => b.space - a.space)[0]
+    placement = bestPlacement.placement as PopoverPlacement
   }
 
-  // Default to bottom if all else fails
-  return 'bottom'
-}
-
-// Update the position of the popover
-const updatePosition = () => {
-  if (!triggerRef.value || !popoverRef.value) return
-
-  // Get the optimal placement
-  actualPlacement.value = getOptimalPlacement()
-
-  const triggerRect = triggerRef.value.getBoundingClientRect()
-  const popoverRect = popoverRef.value.getBoundingClientRect()
-
-  // Calculate position based on placement
   let top = 0
   let left = 0
 
-  switch (actualPlacement.value) {
+  // Position based on placement
+  switch (placement) {
     case 'top':
       top = triggerRect.top - popoverRect.height - props.offset
       left = triggerRect.left + triggerRect.width / 2 - popoverRect.width / 2
@@ -364,62 +201,105 @@ const updatePosition = () => {
       break
   }
 
-  // Constrain to viewport
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
+  // Boundary adjustments to keep popover in viewport
+  if (left < 10) left = 10
+  if (left + popoverRect.width > windowWidth - 10) left = windowWidth - popoverRect.width - 10
+  if (top < 10) top = 10
+  if (top + popoverRect.height > windowHeight - 10) top = windowHeight - popoverRect.height - 10
 
-  // Don't let it go off the right
-  if (left + popoverRect.width > viewportWidth) {
-    left = viewportWidth - popoverRect.width - 8
+  // Update styles - only use the Vue binding mechanism for styles to maintain transitions
+  popoverStyle.value = {
+    position: 'fixed',
+    top: `${top}px`,
+    left: `${left}px`,
+    zIndex: '9999',
   }
 
-  // Don't let it go off the left
-  if (left < 8) {
-    left = 8
-  }
-
-  // Don't let it go off the bottom
-  if (top + popoverRect.height > viewportHeight) {
-    top = viewportHeight - popoverRect.height - 8
-  }
-
-  // Don't let it go off the top
-  if (top < 8) {
-    top = 8
-  }
-
-  // Apply position
+  // For test environments, ensure the style is directly applied as well
+  // This helps with testing without breaking transitions
   if (popoverRef.value) {
+    // Only apply styles that are necessary for tests
+    // We don't override style directly to avoid breaking transitions
+    popoverRef.value.style.position = 'fixed'
     popoverRef.value.style.top = `${top}px`
     popoverRef.value.style.left = `${left}px`
+    popoverRef.value.style.zIndex = '9999'
   }
 }
 
-// IntersectionObserver setup
-let intersectionObserver: IntersectionObserver | null = null
-
-const startObserver = () => {
-  if (!popoverRef.value) return
-
-  // Create observer to detect when popover goes out of viewport
-  intersectionObserver = new IntersectionObserver(
-    (entries) => {
-      if (entries[0]?.intersectionRatio < 1) {
-        // Reposition when not fully visible
-        updatePosition()
-      }
-    },
-    { threshold: [0.5, 1] },
-  )
-
-  intersectionObserver.observe(popoverRef.value)
+// Handle scroll and resize events
+const handleScrollOrResize = () => {
+  updatePosition()
 }
 
-const stopObserver = () => {
-  if (intersectionObserver) {
-    intersectionObserver.disconnect()
-    intersectionObserver = null
+// Watch for model value changes
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal) {
+      showPopover()
+    } else {
+      hidePopover()
+    }
+  },
+)
+
+// Open popover
+const showPopover = async () => {
+  isVisible.value = true
+
+  // Wait for the DOM to update
+  await nextTick()
+
+  // Set up position
+  updatePosition()
+
+  // Set up intersection observer if available in the environment
+  if (typeof IntersectionObserver !== 'undefined' && !observer.value && popoverRef.value) {
+    observer.value = new IntersectionObserver(
+      (entries) => {
+        // If popover is not intersecting (out of view), update position
+        if (!entries[0].isIntersecting) {
+          updatePosition()
+        }
+      },
+      { threshold: 0.5 },
+    )
+
+    observer.value.observe(popoverRef.value)
   }
+
+  // Focus the popover for accessibility
+  if (props.autoFocus && popoverRef.value) {
+    previousActiveElement.value = document.activeElement as HTMLElement
+    popoverRef.value.focus()
+  }
+
+  emit('show')
+}
+
+// Close popover
+const hidePopover = () => {
+  isVisible.value = false
+
+  // Disconnect observer
+  if (observer.value) {
+    observer.value.disconnect()
+    observer.value = null
+  }
+
+  // Restore focus
+  if (previousActiveElement.value) {
+    previousActiveElement.value.focus()
+    previousActiveElement.value = null
+  }
+
+  emit('hide')
+}
+
+// Toggle popover
+const togglePopover = () => {
+  emit('update:modelValue', !isVisible.value)
 }
 
 // Handle keyboard events
@@ -431,26 +311,6 @@ const handleKeydown = (event: KeyboardEvent) => {
     emit('update:modelValue', false)
     event.preventDefault()
   }
-
-  // Handle tab key for focus trap
-  if (event.key === 'Tab' && popoverRef.value) {
-    const focusableElements = getFocusableElements(popoverRef.value)
-    if (focusableElements.length === 0) return
-
-    const firstElement = focusableElements[0]
-    const lastElement = focusableElements[focusableElements.length - 1]
-
-    // Shift+Tab on first element should loop to last element
-    if (event.shiftKey && document.activeElement === firstElement) {
-      lastElement.focus()
-      event.preventDefault()
-    }
-    // Tab on last element should loop to first element
-    else if (!event.shiftKey && document.activeElement === lastElement) {
-      firstElement.focus()
-      event.preventDefault()
-    }
-  }
 }
 
 // Click outside handler
@@ -461,8 +321,8 @@ const handleClickOutside = (event: MouseEvent) => {
 
   // Don't close if clicking on the trigger or popover
   if (
-    (triggerRef.value && triggerRef.value.contains(target)) ||
-    (popoverRef.value && popoverRef.value.contains(target))
+    (triggerRef.value && (triggerRef.value === target || triggerRef.value.contains(target))) ||
+    (popoverRef.value && (popoverRef.value === target || popoverRef.value.contains(target)))
   ) {
     return
   }
@@ -470,17 +330,11 @@ const handleClickOutside = (event: MouseEvent) => {
   emit('update:modelValue', false)
 }
 
-// Resize and scroll handlers for repositioning
-const handleResize = () => {
-  if (isVisible.value) {
-    updatePosition()
-  }
-}
-
-const handleScroll = () => {
-  if (isVisible.value) {
-    updatePosition()
-  }
+// Specifically handle trigger clicks
+const handleTriggerClick = (event: MouseEvent) => {
+  event.preventDefault()
+  event.stopPropagation()
+  togglePopover()
 }
 
 // Lifecycle hooks
@@ -488,8 +342,8 @@ onMounted(() => {
   // Add event listeners
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('keydown', handleKeydown)
-  window.addEventListener('resize', handleResize)
-  window.addEventListener('scroll', handleScroll, true)
+  window.addEventListener('resize', handleScrollOrResize)
+  window.addEventListener('scroll', handleScrollOrResize, true) // Use capture phase
 
   // Initialize state based on modelValue
   if (props.modelValue) {
@@ -501,70 +355,84 @@ onBeforeUnmount(() => {
   // Clean up event listeners
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleKeydown)
-  window.removeEventListener('resize', handleResize)
-  window.removeEventListener('scroll', handleScroll, true)
-  stopObserver()
+  window.removeEventListener('resize', handleScrollOrResize)
+  window.removeEventListener('scroll', handleScrollOrResize, true)
+
+  // Disconnect intersection observer
+  if (observer.value) {
+    observer.value.disconnect()
+    observer.value = null
+  }
 })
 </script>
 
 <template>
-  <div ref="containerRef" class="inline-block">
-    <!-- Trigger slot wrapped in a div for positioning reference -->
+  <div ref="containerRef" class="relative inline-block">
+    <!-- Trigger element -->
     <div
       ref="triggerRef"
-      @click="togglePopover"
+      @click="handleTriggerClick"
       class="inline-block cursor-pointer"
       v-bind="triggerAriaAttrs"
     >
       <slot name="trigger"></slot>
     </div>
 
-    <!-- Teleport the popover to the body to avoid layout issues -->
-    <Teleport to="body">
-      <!-- Popover container -->
+    <!-- Popover content using Vue's transition for better animation control -->
+    <Transition
+      :enter-active-class="props.animated ? 'transition-all duration-200 ease-out' : ''"
+      :enter-from-class="props.animated ? 'opacity-0 scale-95' : ''"
+      :enter-to-class="props.animated ? 'opacity-100 scale-100' : ''"
+      :leave-active-class="props.animated ? 'transition-all duration-150 ease-in' : ''"
+      :leave-from-class="props.animated ? 'opacity-100 scale-100' : ''"
+      :leave-to-class="props.animated ? 'opacity-0 scale-95' : ''"
+    >
       <div
         v-if="isVisible"
         ref="popoverRef"
         :id="id"
-        :style="popoverStyles"
         v-bind="popoverAriaAttrs"
-        :class="[
-          'fixed',
-          animationClasses.base,
-          isOpening || isClosing ? animationClasses.hide : animationClasses.show,
-        ]"
+        :class="['fixed z-50 w-max']"
+        :style="popoverStyle"
       >
-        <!-- Arrow indicator pointing to trigger -->
+        <!-- Arrow indicator -->
         <div
           v-if="showArrow"
           :class="[
             'absolute h-3 w-3 rotate-45 border bg-white',
-            // Position arrow based on placement
-            actualPlacement === 'top' ? 'bottom-0 translate-y-1/2 border-r border-b' : '',
-            actualPlacement === 'right' ? 'left-0 -translate-x-1/2 border-t border-l' : '',
-            actualPlacement === 'bottom' ? 'top-0 -translate-y-1/2 border-t border-l' : '',
-            actualPlacement === 'left' ? 'right-0 translate-x-1/2 border-r border-b' : '',
-            // Horizontal centering for top/bottom placements
-            actualPlacement === 'top' || actualPlacement === 'bottom'
-              ? 'left-1/2 -translate-x-1/2'
-              : '',
-            // Vertical centering for left/right placements
-            actualPlacement === 'left' || actualPlacement === 'right'
-              ? 'top-1/2 -translate-y-1/2'
-              : '',
+            placement === 'top' ? 'bottom-0 translate-y-1/2 border-r border-b' : '',
+            placement === 'right' ? 'left-0 -translate-x-1/2 border-t border-l' : '',
+            placement === 'bottom' ? 'top-0 -translate-y-1/2 border-t border-l' : '',
+            placement === 'left' ? 'right-0 translate-x-1/2 border-r border-b' : '',
+            placement === 'top' || placement === 'bottom' ? 'left-1/2 -translate-x-1/2' : '',
+            placement === 'left' || placement === 'right' ? 'top-1/2 -translate-y-1/2' : '',
           ]"
           aria-hidden="true"
         ></div>
 
         <!-- Content card -->
-        <TCard
-          :elevation="elevation"
-          class="overflow-hidden"
-          :class="['relative z-50', props.class]"
-        >
+        <TCard :elevation="elevation" class="overflow-hidden" :class="['relative', props.class]">
           <slot></slot>
         </TCard>
       </div>
-    </Teleport>
+    </Transition>
   </div>
 </template>
+
+<style scoped>
+/* Ensure the popover is always visible */
+.fixed {
+  position: fixed !important;
+  z-index: 9999 !important;
+  width: max-content !important;
+}
+
+/* Handle potential overflow */
+@media (max-width: 640px) {
+  .fixed {
+    max-width: calc(100vw - 32px) !important;
+    max-height: calc(100vh - 128px) !important;
+    overflow: auto !important;
+  }
+}
+</style>

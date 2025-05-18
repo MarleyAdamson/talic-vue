@@ -17,6 +17,7 @@ This is a collection of Vue components used in the Talic Vue application. Browse
 - **TModal** - A modal dialog component for displaying content that requires user attention
 - **TInput** - A form input component with styling and validation states
 - **TPopover** - An accessible popover component for displaying contextual content
+- **TInputCalendar** - A date picker component with calendar selection and multiple display formats
 
 ## Usage
 
@@ -39,10 +40,15 @@ import {
   ButtonSize,
   TPopover,
   PopoverPlacement,
+  TInputCalendar,
+  WeekdayStart,
+  DateDisplayFormat,
 } from '@talic-vue/components'
 
 // Example usage with type safety:
 const variant: ButtonVariant = 'primary'
 const size: ButtonSize = 'md'
 const placement: PopoverPlacement = 'bottom'
+const weekStart: WeekdayStart = 'monday'
+const dateFormat: DateDisplayFormat = 'yyyy-MM-dd'
 ```
