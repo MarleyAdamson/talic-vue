@@ -239,7 +239,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 // Trap focus inside modal for accessibility
 const trapFocus = () => {
-  if (!modalRef.value) return
+  if (!modalRef.value || !isVisible.value) return
 
   // Get all focusable elements
   const focusableElements = modalRef.value.querySelectorAll(
