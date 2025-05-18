@@ -8,7 +8,13 @@ This is a collection of Vue components used in the Talic Vue application. Browse
 
 ## Components
 
-- **TButton** - A customizable button component with different variants
+- **TButton** - A customizable button component with different variants and sizes
+- **TButtonGroup** - A component for grouping related buttons together
+- **TBadge** - A versatile badge component for status indicators or labels
+- **TBadgeGroup** - A component to manage and organize groups of badges
+- **TAlert** - An alert component for displaying messages with different severity levels
+- **TCard** - A card component for organizing content in a container
+- **TModal** - A modal dialog component for displaying content that requires user attention
 
 ## Usage
 
@@ -19,3 +25,15 @@ Each component is documented with:
 - Different variations
 
 Click on a component in the sidebar to see its documentation and interact with it.
+
+## Type Exports
+
+All component types are exported and can be imported for use in your TypeScript code:
+
+```typescript
+import { TButton, ButtonVariant, ButtonSize } from '@talic-vue/components'
+
+// Example usage with type safety:
+const variant: ButtonVariant = 'primary'
+const size: ButtonSize = 'md'
+```
