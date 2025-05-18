@@ -2,6 +2,7 @@
 import type { PropType } from 'vue'
 import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import TButton from './TButton.vue'
+import TCard from './TCard.vue'
 
 // Define modal size options
 type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full'
@@ -93,6 +94,20 @@ const props = defineProps({
     type: String,
     default: () => `modal-description-${Math.random().toString(36).substring(2, 9)}`,
   },
+  /**
+   * Whether to auto-focus the first element in the modal
+   */
+  autoFocus: {
+    type: Boolean,
+    default: false,
+  },
+  /**
+   * ID of the element to focus when the modal opens
+   */
+  initialFocusId: {
+    type: String,
+    default: '',
+  },
 })
 
 // Define emits with types
@@ -179,7 +194,11 @@ const openModal = async () => {
     isOpening.value = false
   }, 50)
 
-  trapFocus()
+  // Only call trapFocus if autoFocus is enabled
+  if (props.autoFocus) {
+    trapFocus()
+  }
+
   emit('open')
 
   // Prevent body scrolling when modal is open
@@ -241,7 +260,16 @@ const handleKeydown = (event: KeyboardEvent) => {
 const trapFocus = () => {
   if (!modalRef.value || !isVisible.value) return
 
-  // Get all focusable elements
+  // If initialFocusId is provided, focus that element
+  if (props.initialFocusId) {
+    const initialElement = document.getElementById(props.initialFocusId)
+    if (initialElement) {
+      initialElement.focus()
+      return
+    }
+  }
+
+  // Otherwise, get all focusable elements and focus the first one
   const focusableElements = modalRef.value.querySelectorAll(
     'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
   )
@@ -302,16 +330,17 @@ onBeforeUnmount(() => {
         :aria-labelledby="titleId"
         :aria-describedby="descriptionId"
         :aria-modal="isVisible ? 'true' : 'false'"
+        tabindex="-1"
         :class="[
           'pointer-events-none fixed inset-0 z-50 flex items-end justify-center sm:items-center',
           { hidden: !isVisible },
         ]"
       >
         <!-- Modal content - restore pointer-events so content is interactive -->
-        <div
+        <TCard
           ref="contentRef"
           :class="[
-            'pointer-events-auto relative flex flex-col overflow-hidden bg-white shadow-xl dark:bg-gray-50',
+            'pointer-events-auto relative flex flex-col overflow-hidden',
             // Different styling for fullscreen vs regular modals
             isFullscreen
               ? 'h-full w-full rounded-none sm:max-h-[calc(100vh-2rem)] sm:rounded-lg'
@@ -325,70 +354,74 @@ onBeforeUnmount(() => {
             },
             props.class,
           ]"
+          :elevation="'lg'"
+          :rounded="isFullscreen ? 'none' : 'lg'"
         >
           <!-- Header slot if provided, otherwise default header -->
-          <div v-if="$slots.header" class="border-b border-gray-100 px-6 py-4 dark:border-gray-200">
-            <slot name="header"></slot>
-          </div>
-          <div
-            v-else-if="title || $slots.title || subtitle || $slots.subtitle || showCloseButton"
-            class="flex items-start justify-between border-b border-gray-100 px-6 py-4 dark:border-gray-200"
-          >
-            <div>
-              <!-- Title slot or prop -->
-              <h3
-                v-if="$slots.title || title"
-                :id="titleId"
-                class="text-lg font-medium text-gray-800 sm:text-xl dark:text-gray-800"
-              >
-                <slot name="title">{{ title }}</slot>
-              </h3>
-
-              <!-- Subtitle slot or prop -->
-              <p
-                v-if="$slots.subtitle || subtitle"
-                :id="descriptionId"
-                class="mt-1 text-sm text-gray-600 dark:text-gray-600"
-              >
-                <slot name="subtitle">{{ subtitle }}</slot>
-              </p>
+          <template #header>
+            <div v-if="$slots.header">
+              <slot name="header"></slot>
             </div>
-
-            <!-- Close button -->
-            <TButton
-              v-if="showCloseButton"
-              variant="ghost"
-              size="sm"
-              aria-label="Close modal"
-              class="-mt-2 -mr-2"
-              @click="updateModel(false)"
+            <div
+              v-else-if="title || $slots.title || subtitle || $slots.subtitle || showCloseButton"
+              class="flex items-start justify-between"
             >
-              <svg
-                class="h-5 w-5"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
+              <div>
+                <!-- Title slot or prop -->
+                <h3
+                  v-if="$slots.title || title"
+                  :id="titleId"
+                  class="text-lg font-medium text-gray-800 sm:text-xl dark:text-gray-800"
+                >
+                  <slot name="title">{{ title }}</slot>
+                </h3>
+
+                <!-- Subtitle slot or prop -->
+                <p
+                  v-if="$slots.subtitle || subtitle"
+                  :id="descriptionId"
+                  class="mt-1 text-sm text-gray-600 dark:text-gray-600"
+                >
+                  <slot name="subtitle">{{ subtitle }}</slot>
+                </p>
+              </div>
+
+              <!-- Close button -->
+              <TButton
+                v-if="showCloseButton"
+                variant="ghost"
+                size="sm"
+                aria-label="Close modal"
+                class="-mt-2 -mr-2"
+                @click="updateModel(false)"
               >
-                <path
-                  fill-rule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </TButton>
-          </div>
+                <svg
+                  class="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </TButton>
+            </div>
+          </template>
 
           <!-- Body content -->
-          <div class="flex-1 overflow-y-auto px-6 py-4">
+          <div class="flex-1 overflow-y-auto">
             <slot></slot>
           </div>
 
           <!-- Footer if provided -->
-          <div v-if="$slots.footer" class="border-t border-gray-100 px-6 py-4 dark:border-gray-200">
+          <template v-if="$slots.footer" #footer>
             <slot name="footer"></slot>
-          </div>
-        </div>
+          </template>
+        </TCard>
       </div>
     </div>
   </Teleport>

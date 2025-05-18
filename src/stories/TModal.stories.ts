@@ -14,6 +14,8 @@ interface TModalStoryArgs {
   showCloseButton: boolean
   animated: boolean
   persistent: boolean
+  autoFocus: boolean
+  initialFocusId: string
   id?: string
   titleId?: string
   descriptionId?: string
@@ -81,6 +83,14 @@ const meta: CustomMeta = {
       control: 'boolean',
       description: 'Whether the modal should persist in the DOM when closed',
     },
+    autoFocus: {
+      control: 'boolean',
+      description: 'Whether to auto-focus the first element in the modal',
+    },
+    initialFocusId: {
+      control: 'text',
+      description: 'ID of the element to focus when the modal opens',
+    },
     id: {
       control: 'text',
       description: 'ID for the modal element',
@@ -124,6 +134,8 @@ const meta: CustomMeta = {
     showCloseButton: true,
     animated: true,
     persistent: false,
+    autoFocus: false, // Default to false so no element is auto-focused
+    initialFocusId: '',
   },
   parameters: {
     // Accessibility parameters
@@ -255,6 +267,8 @@ const meta: CustomMeta = {
           :id="args.id"
           :titleId="args.titleId"
           :descriptionId="args.descriptionId"
+          :autoFocus="args.autoFocus"
+          :initialFocusId="args.initialFocusId"
           @close="$event => args.close && args.close($event)"
           @open="$event => args.open && args.open($event)"
         >
@@ -345,6 +359,35 @@ export const NoBackdropClose: Story = {
     title: 'No Backdrop Close',
     closeOnBackdrop: false,
     default: 'Clicking the backdrop will not close this modal.',
+    modelValue: false, // Start closed
+  },
+}
+
+// Auto-focused modal
+export const AutoFocused: Story = {
+  args: {
+    title: 'Auto-Focused Modal',
+    subtitle: 'The close button will be auto-focused when opened',
+    default: 'This modal automatically focuses the first focusable element.',
+    autoFocus: true,
+    modelValue: false, // Start closed
+  },
+}
+
+// Custom focused element
+export const CustomFocus: Story = {
+  args: {
+    title: 'Custom Focus Modal',
+    subtitle: 'A specific element is focused when opened',
+    default: `
+      <div>
+        <p>This modal focuses a specific element by ID.</p>
+        <button id="focus-target" class="px-4 py-2 bg-blue-600 text-white rounded mt-4">
+          This button should receive focus
+        </button>
+      </div>
+    `,
+    initialFocusId: 'focus-target',
     modelValue: false, // Start closed
   },
 }
