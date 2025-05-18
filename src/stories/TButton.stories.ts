@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
 import { userEvent, within, fn, expect, waitFor } from '@storybook/test'
 import TButton from '../components/TButton.vue'
+import TButtonGroup from '../components/TButtonGroup.vue'
 
 const meta = {
   title: 'Components/TButton',
@@ -93,7 +94,8 @@ const meta = {
     // Control the documentation display
     docs: {
       description: {
-        component: 'An accessible button component that follows WCAG 2.1 AA standards',
+        component:
+          'An accessible button component that follows WCAG 2.1 AA standards. Can be used individually or as part of a TButtonGroup.',
       },
     },
   },
@@ -727,4 +729,39 @@ export const VariantComparison: Story = {
       </div>
     `,
   }),
+}
+
+// Add Button Group Example
+export const InButtonGroup: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Buttons can be grouped together using the TButtonGroup component to create related actions',
+      },
+    },
+  },
+  render: () => ({
+    components: { TButton, TButtonGroup },
+    setup() {
+      const onClick = fn()
+      return { onClick }
+    },
+    template: `
+      <div class="space-y-4">
+        <TButtonGroup>
+          <TButton variant="primary" @click="onClick">Left</TButton>
+          <TButton variant="primary" @click="onClick">Middle</TButton>
+          <TButton variant="primary" @click="onClick">Right</TButton>
+        </TButtonGroup>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    // Find and click the first button
+    const leftButton = canvas.getByText('Left')
+    await userEvent.click(leftButton)
+  },
 }

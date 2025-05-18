@@ -1,16 +1,27 @@
 <script lang="ts" setup>
 import type { PropType, Slots, ComputedRef } from 'vue'
-import { computed, useSlots } from 'vue'
+import { computed, useSlots, inject, watchEffect, ref, onMounted } from 'vue'
 
 // Button variant types
 type ButtonVariant = 'primary' | 'success' | 'secondary' | 'warning' | 'error' | 'info' | 'ghost'
 type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 type ButtonType = 'button' | 'submit' | 'reset'
+type Orientation = 'horizontal' | 'vertical'
 
 // Size classes interface
 interface SizeConfig {
   button: string[]
   icon: string
+}
+
+// Button group context
+interface ButtonGroupContext {
+  isButtonGroup: { value: boolean }
+  isFirstButton: { value: (el: Element) => boolean }
+  isLastButton: { value: (el: Element) => boolean }
+  rounded: { value: boolean }
+  orientation: { value: Orientation }
+  hasGap: { value: boolean }
 }
 
 const props = defineProps({
@@ -102,6 +113,40 @@ const emit = defineEmits<{
 // Get slots to check if prefix/suffix are provided
 const slots: Slots = useSlots()
 
+// Store a reference to the button element
+const buttonElement = ref<HTMLButtonElement | null>(null)
+
+// Button state for focus tracking
+const isFocused = ref(false)
+
+// Inject button group context if available
+const buttonGroup = inject<ButtonGroupContext>('buttonGroup', {
+  isButtonGroup: { value: false },
+  isFirstButton: { value: () => false },
+  isLastButton: { value: () => false },
+  rounded: { value: true },
+  orientation: { value: 'horizontal' },
+  hasGap: { value: false },
+})
+
+// Reactive flags to track button position
+const isFirst = ref(false)
+const isLast = ref(false)
+const isGrouped = computed(() => buttonGroup.isButtonGroup.value)
+const isRounded = computed(() => buttonGroup.rounded.value)
+const orientation = computed(() => buttonGroup.orientation.value)
+const hasGap = computed(() => buttonGroup.hasGap.value)
+
+// Update button position flags when button element or context changes
+onMounted(() => {
+  watchEffect(() => {
+    if (buttonElement.value && isGrouped.value) {
+      isFirst.value = buttonGroup.isFirstButton.value(buttonElement.value)
+      isLast.value = buttonGroup.isLastButton.value(buttonElement.value)
+    }
+  })
+})
+
 // Get size-specific classes
 const sizeClasses: ComputedRef<SizeConfig> = computed((): SizeConfig => {
   switch (props.size) {
@@ -135,15 +180,43 @@ const sizeClasses: ComputedRef<SizeConfig> = computed((): SizeConfig => {
 })
 
 // Common base classes for all buttons
-const baseClasses: string[] = [
-  'font-medium',
-  'transition-all',
-  'focus:outline-none',
-  'focus:ring-2',
-  'focus:ring-offset-2',
-  'focus-visible:ring-2',
-  'focus-visible:ring-offset-2',
-]
+const baseClasses: string[] = ['font-medium', 'transition-all', 'focus:outline-none']
+
+// Get focus classes based on whether in a group or not
+const focusClasses = computed(() => {
+  // If not in a group, use standard focus styling
+  if (!isGrouped.value) {
+    return [
+      'focus:ring-2',
+      'focus:ring-offset-2',
+      'focus-visible:ring-2',
+      'focus-visible:ring-offset-2',
+    ]
+  }
+
+  // In a group with gap, use standard focus styling
+  if (hasGap.value) {
+    return [
+      'focus:ring-2',
+      'focus:ring-offset-2',
+      'focus-visible:ring-2',
+      'focus-visible:ring-offset-2',
+    ]
+  }
+
+  // In a group without gap, use special focus handling
+  // Use higher z-index for the focused element to ensure rings are visible
+  return [
+    'focus:z-10',
+    'focus:relative',
+    'focus:ring-2',
+    'focus:ring-offset-0',
+    'focus-visible:z-10',
+    'focus-visible:relative',
+    'focus-visible:ring-2',
+    'focus-visible:ring-offset-0',
+  ]
+})
 
 // Common state classes for disabled and full-width
 const getStateClasses = (): string[] => {
@@ -164,9 +237,72 @@ const getStateClasses = (): string[] => {
   return classes
 }
 
+// Get classes for button in a button group
+const buttonGroupClasses = computed(() => {
+  if (!isGrouped.value) {
+    return []
+  }
+
+  // Default to removing all border radius
+  const classes: string[] = ['rounded-none']
+
+  // Add position styles for when the button is hovered or focused
+  classes.push('relative')
+
+  // If rounded is enabled, add appropriate rounded corners
+  if (isRounded.value) {
+    if (orientation.value === 'vertical') {
+      // For vertical orientation
+      if (isFirst.value) {
+        classes.push('rounded-t')
+      }
+      if (isLast.value) {
+        classes.push('rounded-b')
+      }
+    } else {
+      // For horizontal orientation (default)
+      if (isFirst.value) {
+        classes.push('rounded-l')
+      }
+      if (isLast.value) {
+        classes.push('rounded-r')
+      }
+    }
+  }
+
+  // For button groups without gap, adjust borders to avoid double-borders
+  if (!hasGap.value) {
+    if (!isLast.value) {
+      classes.push(orientation.value === 'vertical' ? 'border-b-0' : 'border-r-0')
+    }
+
+    // Add negative margin to create seamless appearance
+    if (!isFirst.value && orientation.value === 'horizontal') {
+      classes.push('-ml-px')
+    }
+    if (!isFirst.value && orientation.value === 'vertical') {
+      classes.push('-mt-px')
+    }
+  }
+
+  return classes
+})
+
+// Button variant classes
 const buttonClasses: ComputedRef<string[]> = computed<string[]>((): string[] => {
-  const base: string[] = [...sizeClasses.value.button, ...baseClasses]
+  const base: string[] = [...baseClasses, ...focusClasses.value]
   const variants: string[] = []
+
+  // Only add size classes if not in a button group
+  if (!isGrouped.value) {
+    base.push(...sizeClasses.value.button)
+  } else {
+    // For button groups, only add padding and text size, not rounded corners
+    const sizeClassesWithoutRounded = sizeClasses.value.button.filter(
+      (c) => !c.startsWith('rounded'),
+    )
+    base.push(...sizeClassesWithoutRounded)
+  }
 
   // Ghost variant (transparent)
   if (props.variant === 'ghost') {
@@ -338,12 +474,24 @@ const handleClick = (event: MouseEvent): void => {
     emit('click', event)
   }
 }
+
+// Handle focus events to track focused state
+const handleFocus = () => {
+  isFocused.value = true
+}
+
+const handleBlur = () => {
+  isFocused.value = false
+}
 </script>
 
 <template>
   <button
-    :class="buttonClasses"
+    ref="buttonElement"
+    :class="[...buttonClasses, ...buttonGroupClasses]"
     @click="handleClick"
+    @focus="handleFocus"
+    @blur="handleBlur"
     :disabled="disabled || loading"
     :type="type"
     :aria-label="ariaLabel"
