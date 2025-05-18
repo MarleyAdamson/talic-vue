@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { h } from 'vue'
-import TButtonGroup from '../TButtonGroup.vue'
-import TButton from '../TButton.vue'
+import { TButtonGroup, TButton } from '../../components'
 
 interface ButtonGroupConsumer {
   buttonGroup: {
