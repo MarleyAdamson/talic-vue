@@ -63,3 +63,16 @@ export type RoundedOption = boolean | 'none' | 'sm' | 'md' | 'lg' | 'xl'
 export type AlertVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'
 export type AlertSize = 'sm' | 'md' | 'lg'
 export type AlertElevation = 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+
+// TInput types
+export type InputType =
+  | 'text'
+  | 'email'
+  | 'date'
+  | 'number'
+  | 'password'
+  | 'search'
+  | 'tel'
+  | 'time'
+export type InputVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'
+export type InputSize = 'sm' | 'md' | 'lg'

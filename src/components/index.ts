@@ -6,6 +6,7 @@ export { default as TCard } from './TCard.vue'
 export { default as TAlert } from './TAlert.vue'
 export { default as TBadge } from './TBadge.vue'
 export { default as TBadgeGroup } from './TBadgeGroup.vue'
+export { default as TInput } from './TInput.vue'
 
 // Export types
 export * from './types'
