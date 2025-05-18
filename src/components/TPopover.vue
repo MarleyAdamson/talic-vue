@@ -540,10 +540,10 @@ onBeforeUnmount(() => {
           :class="[
             'absolute h-3 w-3 rotate-45 border bg-white',
             // Position arrow based on placement
-            actualPlacement === 'top' ? 'bottom-0 translate-y-1/2 border-r border-b' : '',
-            actualPlacement === 'right' ? 'left-0 -translate-x-1/2 border-t border-l' : '',
-            actualPlacement === 'bottom' ? 'top-0 -translate-y-1/2 border-t border-l' : '',
-            actualPlacement === 'left' ? 'right-0 translate-x-1/2 border-r border-b' : '',
+            actualPlacement === 'top' ? 'bottom-0 translate-y-1/2 border-b border-r' : '',
+            actualPlacement === 'right' ? 'left-0 -translate-x-1/2 border-l border-t' : '',
+            actualPlacement === 'bottom' ? 'top-0 -translate-y-1/2 border-l border-t' : '',
+            actualPlacement === 'left' ? 'right-0 translate-x-1/2 border-b border-r' : '',
             // Horizontal centering for top/bottom placements
             actualPlacement === 'top' || actualPlacement === 'bottom'
               ? 'left-1/2 -translate-x-1/2'
