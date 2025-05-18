@@ -37,7 +37,7 @@ const props = defineProps({
    * Input model value / v-model
    */
   modelValue: {
-    type: [String, Number],
+    type: [String, Number, Date],
     default: '',
   },
 
@@ -204,7 +204,7 @@ const props = defineProps({
 
 // Emit events
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string | number): void
+  (e: 'update:modelValue', value: string | number | Date): void
   (e: 'input', event: Event): void
   (e: 'change', event: Event): void
   (e: 'focus', event: FocusEvent): void
@@ -251,7 +251,7 @@ const sizeClasses = computed(() => {
     case 'sm':
       return {
         input: 'text-xs',
-        wrapper: 'px-3 py-2',
+        wrapper: '',
         label: 'text-xs',
         helpText: 'text-xs',
         icon: 'h-4 w-4',
@@ -259,7 +259,7 @@ const sizeClasses = computed(() => {
     case 'lg':
       return {
         input: 'text-base',
-        wrapper: 'px-5 py-3.5',
+        wrapper: '',
         label: 'text-base',
         helpText: 'text-sm',
         icon: 'h-5 w-5',
@@ -268,7 +268,7 @@ const sizeClasses = computed(() => {
     default:
       return {
         input: 'text-sm',
-        wrapper: 'px-4 py-2.5',
+        wrapper: '',
         label: 'text-sm',
         helpText: 'text-xs',
         icon: 'h-4.5 w-4.5',
@@ -401,75 +401,37 @@ const wrapperClasses = computed(() => [
 ])
 
 // Input specific classes
-const inputClasses = computed(() => {
-  const classes = [
-    'w-full',
-    'border-none',
-    'focus:ring-0',
-    'focus:outline-none',
-    'bg-transparent',
-    sizeClasses.value.input,
-  ]
+const inputClasses = computed(() => [
+  'w-full',
+  'border-none',
+  'focus:ring-0',
+  'focus:outline-none',
+  'bg-transparent',
+  'p-0', // Explicitly set all padding to 0
+  sizeClasses.value.input,
+])
 
-  // Add padding based on whether we have prefix/suffix slots
-  if (hasPrefixSlot.value) {
-    classes.push('pl-7', 'pl-9') // pl-9 added for test compatibility
-  } else {
-    classes.push('pl-0')
+// Format the model value for the input element
+const formattedValue = computed(() => {
+  if (props.type === 'date' && props.modelValue instanceof Date) {
+    // Format Date as YYYY-MM-DD for date input
+    return props.modelValue.toISOString().split('T')[0]
   }
-
-  if (hasSuffixSlot.value) {
-    classes.push('pr-7', 'pr-9') // pr-9 added for test compatibility
-  } else {
-    classes.push('pr-0')
-  }
-
-  // Add vertical padding
-  classes.push('py-0')
-
-  // Add these classes for test compatibility but they won't affect the appearance
-  // since the input has border-none and the wrapper has the actual styling
-  // Add size-specific classes for tests
-  if (props.size === 'sm') {
-    classes.push('px-3', 'py-2')
-  } else if (props.size === 'lg') {
-    classes.push('px-5', 'py-3.5')
-  } else {
-    classes.push('px-4', 'py-2.5')
-  }
-
-  // Add state classes for tests
-  if (props.disabled) {
-    classes.push('cursor-not-allowed', 'opacity-50', 'bg-gray-100')
-  }
-
-  if (props.readonly) {
-    classes.push('bg-gray-50')
-  }
-
-  if (props.errorMessage) {
-    classes.push('border-red-300', 'focus:border-red-500', 'focus:ring-red-200')
-  }
-
-  // Add variant classes for tests
-  const variantClassMap = {
-    primary: ['border-gray-300', 'focus:border-blue-500', 'focus:ring-blue-200'],
-    secondary: ['border-gray-300', 'focus:border-gray-500', 'focus:ring-gray-200'],
-    success: ['border-green-300', 'focus:border-green-500', 'focus:ring-green-200'],
-    warning: ['border-yellow-300', 'focus:border-yellow-500', 'focus:ring-yellow-200'],
-    error: ['border-red-300', 'focus:border-red-500', 'focus:ring-red-200'],
-    info: ['border-indigo-300', 'focus:border-indigo-500', 'focus:ring-indigo-200'],
-  }
-
-  classes.push(...variantClassMap[props.variant])
-
-  return classes
+  return props.modelValue
 })
 
 // Event handlers
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement
-  emit('update:modelValue', target.value)
+
+  // Handle different types appropriately
+  if (props.type === 'date' && target.value) {
+    // For date inputs, convert the string to a Date object
+    emit('update:modelValue', new Date(target.value))
+  } else {
+    emit('update:modelValue', target.value)
+  }
+
   emit('input', event)
 }
 
@@ -511,7 +473,7 @@ const handleBlur = (event: FocusEvent) => {
           ref="inputElement"
           :id="inputId"
           :type="type"
-          :value="modelValue"
+          :value="formattedValue"
           :placeholder="placeholder"
           :disabled="disabled"
           :readonly="readonly"
@@ -527,7 +489,15 @@ const handleBlur = (event: FocusEvent) => {
           :aria-invalid="!!errorMessage"
           :aria-describedby="descriptionId"
           :aria-required="required"
-          :class="inputClasses"
+          :class="[
+            inputClasses,
+            // Add appropriate height based on size
+            props.size === 'sm' ? 'py-2' : props.size === 'lg' ? 'py-3.5' : 'py-2.5',
+            // Only add left padding if there's a prefix slot
+            hasPrefixSlot ? 'pl-8' : 'pl-3',
+            // Only add right padding if there's a suffix slot
+            hasSuffixSlot ? 'pr-8' : 'pr-3',
+          ]"
           v-bind="$attrs"
           @input="handleInput"
           @change="handleChange"

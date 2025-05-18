@@ -71,9 +71,11 @@ describe('TInput Component', () => {
         },
       })
 
-      const input = wrapper.find('input')
-      expect(input.classes()).toContain('focus:border-blue-500')
-      expect(input.classes()).toContain('focus:ring-blue-200')
+      // The wrapper is the third div (index 2) in the component
+      const inputWrapper = wrapper.findAll('div')[2]
+      expect(inputWrapper.classes()).toContain('border-gray-300')
+      expect(inputWrapper.classes()).toContain('focus-within:border-blue-500')
+      expect(inputWrapper.classes()).toContain('focus-within:ring-blue-200')
     })
 
     it('renders success variant with correct classes', () => {
@@ -84,10 +86,10 @@ describe('TInput Component', () => {
         },
       })
 
-      const input = wrapper.find('input')
-      expect(input.classes()).toContain('border-green-300')
-      expect(input.classes()).toContain('focus:border-green-500')
-      expect(input.classes()).toContain('focus:ring-green-200')
+      const inputWrapper = wrapper.findAll('div')[2]
+      expect(inputWrapper.classes()).toContain('border-green-300')
+      expect(inputWrapper.classes()).toContain('focus-within:border-green-500')
+      expect(inputWrapper.classes()).toContain('focus-within:ring-green-200')
     })
 
     it('renders warning variant with correct classes', () => {
@@ -98,10 +100,10 @@ describe('TInput Component', () => {
         },
       })
 
-      const input = wrapper.find('input')
-      expect(input.classes()).toContain('border-yellow-300')
-      expect(input.classes()).toContain('focus:border-yellow-500')
-      expect(input.classes()).toContain('focus:ring-yellow-200')
+      const inputWrapper = wrapper.findAll('div')[2]
+      expect(inputWrapper.classes()).toContain('border-yellow-300')
+      expect(inputWrapper.classes()).toContain('focus-within:border-yellow-500')
+      expect(inputWrapper.classes()).toContain('focus-within:ring-yellow-200')
     })
 
     it('renders error variant with correct classes', () => {
@@ -112,10 +114,10 @@ describe('TInput Component', () => {
         },
       })
 
-      const input = wrapper.find('input')
-      expect(input.classes()).toContain('border-red-300')
-      expect(input.classes()).toContain('focus:border-red-500')
-      expect(input.classes()).toContain('focus:ring-red-200')
+      const inputWrapper = wrapper.findAll('div')[2]
+      expect(inputWrapper.classes()).toContain('border-red-300')
+      expect(inputWrapper.classes()).toContain('focus-within:border-red-500')
+      expect(inputWrapper.classes()).toContain('focus-within:ring-red-200')
     })
 
     it('renders info variant with correct classes', () => {
@@ -126,10 +128,10 @@ describe('TInput Component', () => {
         },
       })
 
-      const input = wrapper.find('input')
-      expect(input.classes()).toContain('border-indigo-300')
-      expect(input.classes()).toContain('focus:border-indigo-500')
-      expect(input.classes()).toContain('focus:ring-indigo-200')
+      const inputWrapper = wrapper.findAll('div')[2]
+      expect(inputWrapper.classes()).toContain('border-indigo-300')
+      expect(inputWrapper.classes()).toContain('focus-within:border-indigo-500')
+      expect(inputWrapper.classes()).toContain('focus-within:ring-indigo-200')
     })
 
     it('renders secondary variant with correct classes', () => {
@@ -140,10 +142,10 @@ describe('TInput Component', () => {
         },
       })
 
-      const input = wrapper.find('input')
-      expect(input.classes()).toContain('border-gray-300')
-      expect(input.classes()).toContain('focus:border-gray-500')
-      expect(input.classes()).toContain('focus:ring-gray-200')
+      const inputWrapper = wrapper.findAll('div')[2]
+      expect(inputWrapper.classes()).toContain('border-gray-300')
+      expect(inputWrapper.classes()).toContain('focus-within:border-gray-500')
+      expect(inputWrapper.classes()).toContain('focus-within:ring-gray-200')
     })
   })
 
@@ -158,9 +160,10 @@ describe('TInput Component', () => {
       })
 
       const input = wrapper.find('input')
-      expect(input.classes()).toContain('px-3')
-      expect(input.classes()).toContain('py-2')
       expect(input.classes()).toContain('text-xs')
+
+      // Check input has correct padding when rendered
+      expect(input.attributes('class')).toContain('py-2')
     })
 
     it('renders medium size with correct classes', () => {
@@ -172,9 +175,10 @@ describe('TInput Component', () => {
       })
 
       const input = wrapper.find('input')
-      expect(input.classes()).toContain('px-4')
-      expect(input.classes()).toContain('py-2.5')
       expect(input.classes()).toContain('text-sm')
+
+      // Check input has correct padding when rendered
+      expect(input.attributes('class')).toContain('py-2.5')
     })
 
     it('renders large size with correct classes', () => {
@@ -186,9 +190,10 @@ describe('TInput Component', () => {
       })
 
       const input = wrapper.find('input')
-      expect(input.classes()).toContain('px-5')
-      expect(input.classes()).toContain('py-3.5')
       expect(input.classes()).toContain('text-base')
+
+      // Check input has correct padding when rendered
+      expect(input.attributes('class')).toContain('py-3.5')
     })
   })
 
@@ -203,10 +208,12 @@ describe('TInput Component', () => {
       })
 
       const input = wrapper.find('input')
+      const inputWrapper = wrapper.findAll('div')[2]
+
       expect(input.attributes('disabled')).toBeDefined()
-      expect(input.classes()).toContain('cursor-not-allowed')
-      expect(input.classes()).toContain('opacity-50')
-      expect(input.classes()).toContain('bg-gray-100')
+      expect(inputWrapper.classes()).toContain('cursor-not-allowed')
+      expect(inputWrapper.classes()).toContain('opacity-50')
+      expect(inputWrapper.classes()).toContain('bg-gray-100')
     })
 
     it('applies readonly state correctly', () => {
@@ -218,8 +225,10 @@ describe('TInput Component', () => {
       })
 
       const input = wrapper.find('input')
+      const inputWrapper = wrapper.findAll('div')[2]
+
       expect(input.attributes('readonly')).toBeDefined()
-      expect(input.classes()).toContain('bg-gray-50')
+      expect(inputWrapper.classes()).toContain('bg-gray-50')
     })
 
     it('applies required state correctly', () => {
@@ -248,8 +257,12 @@ describe('TInput Component', () => {
       })
 
       const input = wrapper.find('input')
+      const inputWrapper = wrapper.findAll('div')[2]
+
       expect(input.attributes('aria-invalid')).toBe('true')
-      expect(input.classes()).toContain('border-red-300')
+      expect(inputWrapper.classes()).toContain('border-red-300')
+      expect(inputWrapper.classes()).toContain('focus-within:border-red-500')
+      expect(inputWrapper.classes()).toContain('focus-within:ring-red-200')
 
       // Check if the error message is displayed
       expect(wrapper.text()).toContain('This is an error message')
@@ -263,8 +276,9 @@ describe('TInput Component', () => {
         },
       })
 
-      const input = wrapper.find('input')
-      expect(input.classes()).toContain('w-full')
+      // Full width is applied to the root container
+      const container = wrapper.find('div').attributes('class')
+      expect(container).toContain('w-full')
     })
   })
 
@@ -364,7 +378,13 @@ describe('TInput Component', () => {
       })
 
       expect(wrapper.find('.prefix-icon').exists()).toBe(true)
-      expect(wrapper.find('input').classes()).toContain('pl-9')
+      // Verify the prefix slot is positioned properly
+      const prefixSlot = wrapper.find('.prefix-icon')
+      expect(prefixSlot.exists()).toBe(true)
+
+      // Verify proper positioning classes on the slot container
+      const prefixContainer = wrapper.find('.pointer-events-none.absolute.left-3')
+      expect(prefixContainer.exists()).toBe(true)
     })
 
     it('renders suffix slot correctly', () => {
@@ -378,7 +398,13 @@ describe('TInput Component', () => {
       })
 
       expect(wrapper.find('.suffix-icon').exists()).toBe(true)
-      expect(wrapper.find('input').classes()).toContain('pr-9')
+      // Verify the suffix slot is positioned properly
+      const suffixSlot = wrapper.find('.suffix-icon')
+      expect(suffixSlot.exists()).toBe(true)
+
+      // Verify proper positioning classes on the slot container
+      const suffixContainer = wrapper.find('.pointer-events-none.absolute.right-3')
+      expect(suffixContainer.exists()).toBe(true)
     })
   })
 
