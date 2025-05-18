@@ -24,6 +24,8 @@ The library includes the following components:
 | TAlert       | Shows contextual feedback messages with different severity levels |
 | TCard        | Container component for organizing related content                |
 | TModal       | Dialog component for focused user interactions                    |
+| TInput       | Form input component with validation states and styling           |
+| TPopover     | Accessible popover for displaying contextual content              |
 
 ## Type Support for `.vue` Imports in TS
 
@@ -81,9 +83,16 @@ import {
   ButtonSize,
   TBadge,
   BadgeVariant,
+  TPopover,
+  PopoverPlacement,
+  TInput,
+  InputType,
+  InputVariant,
   // etc.
 } from '@talic-vue/components'
 
 // Use with type safety
 const variant: ButtonVariant = 'primary'
+const placement: PopoverPlacement = 'bottom'
+const inputType: InputType = 'email'
 ```

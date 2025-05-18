@@ -15,6 +15,8 @@ This is a collection of Vue components used in the Talic Vue application. Browse
 - **TAlert** - An alert component for displaying messages with different severity levels
 - **TCard** - A card component for organizing content in a container
 - **TModal** - A modal dialog component for displaying content that requires user attention
+- **TInput** - A form input component with styling and validation states
+- **TPopover** - An accessible popover component for displaying contextual content
 
 ## Usage
 
@@ -31,9 +33,16 @@ Click on a component in the sidebar to see its documentation and interact with i
 All component types are exported and can be imported for use in your TypeScript code:
 
 ```typescript
-import { TButton, ButtonVariant, ButtonSize } from '@talic-vue/components'
+import {
+  TButton,
+  ButtonVariant,
+  ButtonSize,
+  TPopover,
+  PopoverPlacement,
+} from '@talic-vue/components'
 
 // Example usage with type safety:
 const variant: ButtonVariant = 'primary'
 const size: ButtonSize = 'md'
+const placement: PopoverPlacement = 'bottom'
 ```

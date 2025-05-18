@@ -76,3 +76,21 @@ export type InputType =
   | 'time'
 export type InputVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'
 export type InputSize = 'sm' | 'md' | 'lg'
+
+// TPopover types
+export type PopoverPlacement = 'top' | 'right' | 'bottom' | 'left' | 'auto'
+export interface PopoverProps {
+  modelValue: boolean
+  placement: PopoverPlacement
+  offset: number
+  showArrow: boolean
+  closeOnClickOutside: boolean
+  animated: boolean
+  class: string
+  elevation: CardElevation
+  id: string
+  ariaLabel: string
+  ariaLabelledby: string
+  ariaDescribedby: string
+  autoFocus: boolean
+}
