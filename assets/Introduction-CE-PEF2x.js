@@ -1,4 +1,4 @@
-import{j as n,M as s}from"./index-CmEdETqa.js";import{useMDXComponents as i}from"./index-BWIaN2SD.js";import"./iframe-Oy_jBFwR.js";import"./_commonjsHelpers-CqkleIqs.js";import"./index-Bx-go_-4.js";import"./index-DrFu-skq.js";function o(t){const e={code:"code",h1:"h1",h2:"h2",li:"li",p:"p",pre:"pre",strong:"strong",ul:"ul",...i(),...t.components};return n.jsxs(n.Fragment,{children:[n.jsx(s,{title:"Introduction"}),`
+import{j as n,M as s}from"./index-DE7nreEm.js";import{useMDXComponents as i}from"./index-C4aPopjG.js";import"./iframe-ByvbC36l.js";import"./_commonjsHelpers-CqkleIqs.js";import"./index-Bx-go_-4.js";import"./index-DrFu-skq.js";function o(t){const e={code:"code",h1:"h1",h2:"h2",li:"li",p:"p",pre:"pre",strong:"strong",ul:"ul",...i(),...t.components};return n.jsxs(n.Fragment,{children:[n.jsx(s,{title:"Introduction"}),`
 `,n.jsx(e.h1,{id:"welcome-to-talic-vue-storybook",children:"Welcome to Talic Vue Storybook"}),`
 `,n.jsx(e.p,{children:"This is a collection of Vue components used in the Talic Vue application. Browse the components in the sidebar to see what's available."}),`
 `,n.jsx(e.h2,{id:"components",children:"Components"}),`
